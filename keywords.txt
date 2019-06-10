@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring motor driver
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+StepperMotor_28BYJ48	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+init	KEYWORD2
+changeDefaultDirection	KEYWORD2
+drive	KEYWORD2	
+driveSteps  KEYWORD2
+stop  KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+DIRECTION_FORWARD	LITERAL1
+DIRECTION_BACKWARD	LITERAL1
