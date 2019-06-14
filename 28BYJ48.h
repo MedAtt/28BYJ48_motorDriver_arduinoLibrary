@@ -1,13 +1,13 @@
 /*
  * 28BYJ48.h
  * 28BYJ-48 stepper motor driving library, using motor driver based on ULN2003.
- * This library is compatible only with arduino pro micro board.
+ * This library is compatible with arduino pro mini, nano, and uno boards.
  * Driver wiring possibilities:
- * 	1: pins 2,3,4,5			timer1
- *  2: pins 6,7,8,9			timer3
- *  3: pins 10,16,14,15 	timer3
- *  4: pins 18,19,20,21		timer1
- * It uses Timer 1 and 3
+ * 	1: pins 2,3,4,5			timer0
+ *  2: pins 6,7,8,9			timer0
+ *  3: pins 10,11,12,13 	timer2
+ *  4: pins A0, A1, A2, A3		timer2
+ * It uses Timer 0 and 2
  * author: Attila Medgyesi
  * email: medgyesiatila1998@gmail.com
  * date: 
@@ -19,8 +19,20 @@
 
 #include "Arduino.h"
 
+//#define DEBUG
+#ifndef DEBUG
+	#define LOG(x) 
+	#define LOG_INIT(x) 
+#else 
+	#define LOG(x) (Serial.print(x))
+	#define LOG_INIT(x) (Serial.begin(x))
+#endif
+
+
 #define DIRECTION_FORWARD true
 #define DIRECTION_BACKWARD false
+
+
 
 class StepperMotor_28BYJ48{
  private:

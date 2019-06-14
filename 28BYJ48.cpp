@@ -5,91 +5,81 @@ StepperMotor_28BYJ48* StepperMotor_28BYJ48::pActivatedConfiguration[4]={0};
 
 StepperMotor_28BYJ48::StepperMotor_28BYJ48(char configuration)
 {
-	
+	LOG_INIT(9600);
+	LOG("Constructor");
 	this->configuration=configuration;
 }
 bool StepperMotor_28BYJ48::init()
 {
-	if(configuration<0 || configuration>3) return false;
+	if(configuration<1 || configuration>4) return false;
 	if(pActivatedConfiguration[configuration-1]!=NULL) return false;
 	
 	pActivatedConfiguration[configuration-1]=this;
 	
-	if(configuration==1)	//PD1, PD0, PD4, PC6   timer1A
+	if(configuration==1)	//PD2, PD3, PD4, PD5   timer0B
 	{
-		DDRD|=(1<<4)|(1<<1)|(1<<0);
-		DDRC|=(1<<6);
+		DDRD|=(1<<5)|(1<<4)|(1<<3)|(1<<2);
+		PORTD&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 		
-		PORTD&=~((1<<4)|(1<<1)|(1<<0));
-		PORTC&=~(1<<6);
 			 
 		//CTC
 		//prescaler 1024
-		TCCR1A=0b00000000;
-		TCCR1B=0b00011101;
-		OCR1AH=0b00000001;
-		OCR1AL=0b00000000;
-		ICR1H=0b00000000;
-		ICR1L=0b11111111;
-		TIMSK1|=0b00000100;
-	}
-	else if(configuration==2)	//PD7, PE6, PB4, PB5	timer3A
-	{
-		DDRD|=(1<<7);
-		DDRE|=(1<<6);
-		DDRB|=(1<<5)|(1<<4);
+		TCCR0A=0b00000010;
+		TCCR0B=0b00000101;
+		OCR0B=0b11111111;
 		
-		PORTD&=~(1<<7);
-		PORTE&=~(1<<6);
-		PORTB&=~((1<<4)|(1<<5));
+		//TIMSK0|=0b00000100;
+	}
+	else if(configuration==2)	//PD6, PD7, PB0, PB1 timer0A
+	{
+		DDRD|=(1<<7)|(1<<6);
+		DDRB|=(1<<1)|(1<<0);
+		
+		PORTD&=~((1<<7)|(1<<6));
+		PORTB&=~((1<<1)|(1<<0));
 		
 		//CTC
 		//prescaler 1024
-		TCCR3A=0b00000000;
-		TCCR3B=0b00011101;
-		OCR3AH=0b00000001;
-		OCR3AL=0b00000000;
-		ICR3H=0b00000000;
-		ICR3L=0b11111111;
-		TIMSK3|=0b00000100;
+		TCCR0A=0b00000010;
+		TCCR0B=0b00000101;
+		OCR0A=0b11111111;
+		//TIMSK0|=0b00000010;
 		
 		
 	}
-	else if(configuration==3)	//PB6, PB2, PB3, PB1	timer3B
+	else if(configuration==3)	//PB2, PB3, PB4, PB5	timer2A
 	{
-		DDRB|=(1<<6)|(1<<3)|(1<<2)|(1<<1);
+		DDRB|=(1<<5)|(1<<4)|(1<<3)|(1<<2);
 		
-		PORTB&=~((1<<6)|(1<<3)|(1<<2)|(1<<1));
+		PORTB&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 		
 		//CTC
 		//prescaler 1024
-		TCCR3A=0b00000000;
-		TCCR3B=0b00011101;
-		OCR3BH=0b00000001;
-		OCR3BL=0b00000000;
-		ICR3H=0b00000000;
-		ICR3L=0b11111111;
-		TIMSK3|=0b00000010;
+		TCCR2A=0b00000010;
+		TCCR2B=0b00000111;
+		OCR2A=0b11111111;
+		
+		//TIMSK2|=0b00000010;
 	}
-	else //PF7, PF6, PF5, PF4						timer1B
+	else //PC0, PC1, PC2, PC3						timer2B
 	{
-		DDRF|=(1<<7)|(1<<6)|(1<<5)|(1<<4);
+		DDRC|=(1<<3)|(1<<2)|(1<<1)|(1<<0);
 		
-		PORTF&=~((1<<7)|(1<<6)|(1<<5)|(1<<4));
+		PORTC&=~((1<<3)|(1<<2)|(1<<1)|(1<<0));
 		
 		//CTC
 		//prescaler 1024
-		TCCR1A=0b00000000;
-		TCCR1B=0b00011101;
-		OCR1BH=0b00000001;
-		OCR1BL=0b00000000;
-		ICR1H=0b00000000;
-		ICR1L=0b11111111;
-		TIMSK1|=0b00000010;
+		TCCR2A=0b00000010;
+		TCCR2B=0b00000111;
+		OCR2B=0b11111111;
+		
+		//TIMSK2|=0b00000100;
 	}
 	steps=0;
 	microstep=0;
-	
+	LOG("Init end, motor: ");
+	LOG((int)(configuration));
+	LOG("\n");
 	sei();
 	return true;
 	
@@ -97,6 +87,10 @@ bool StepperMotor_28BYJ48::init()
 void StepperMotor_28BYJ48::changeDefaultDirection(bool direction)
 {
 	defaultDirection=direction;
+	LOG("Motor");
+	LOG((int)(configuration));
+	if(direction)LOG(" Default direction is FORWARD\n");
+	else LOG(" Default direction is BACKWARD\n");
 }
 
 
@@ -104,29 +98,32 @@ void StepperMotor_28BYJ48::stop()
 {
 	switch(configuration)
 	{
-		case 1: OCR1AH=0b00000001;
-				PORTD&=~((1<<4)|(1<<1)|(1<<0));
-				PORTC&=~(1<<6);
+		case 1: TIMSK0&=~(1<<2);
+				PORTD&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 				break;
-		case 2: OCR3AH=0b00000001;
-				PORTD&=~(1<<7);
-				PORTE&=~(1<<6);
-				PORTB&=~((1<<4)|(1<<5));
+		case 2: TIMSK0&=~(1<<1);
+				PORTD&=~((1<<7)|(1<<6));
+				PORTB&=~((1<<1)|(1<<0));
 				break;
-		case 3: OCR3BH=0b00000001;
-				PORTB&=~((1<<6)|(1<<3)|(1<<2)|(1<<1));
+		case 3: TIMSK2&=~(1<<1);
+				PORTB&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 				break;
-		case 4: OCR1BH=0b00000001;
-				PORTF&=~((1<<7)|(1<<6)|(1<<5)|(1<<4));
+		case 4: TIMSK2&=~(1<<2);
+				PORTC&=~((1<<3)|(1<<2)|(1<<1)|(1<<0));
 				break;
 	}
 	steps=0;
 	microstep=0;
+	LOG("Motor");
+	LOG((int)(configuration));
+	LOG(" stopped\n");
+	
 }
 
 
 void StepperMotor_28BYJ48::microStep()
 {
+	
 	if(steps==0)
 	{
 		stop();
@@ -143,110 +140,114 @@ void StepperMotor_28BYJ48::microStep()
 		microstep=8;
 		if(steps>0)steps--;
 	}
+	LOG("Motor");
+	LOG((int)(configuration));
+	LOG(" step ");
+	LOG(steps);
+	LOG(" microstep ");
+	LOG((int)microstep);
+	LOG("\n");
 	
-	
-	if(configuration==1)
+	if(configuration==1)	//PD2, PD3, PD4, PD5
 	{
-		PORTD&=~((1<<4)|(1<<1)|(1<<0));
-		PORTC&=~(1<<6);
+		PORTD&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 		
 		switch(microstep)
 		{
-			case 0: PORTD|=(1<<1);
+			case 0: PORTD|=(1<<2);
 					break;
-			case 1: PORTD|=(1<<1)|(1<<0);
+			case 1: PORTD|=(1<<3)|(1<<2);
 					break;
-			case 2: PORTD|=(1<<0);
+			case 2: PORTD|=(1<<3);
 					break;
-			case 3: PORTD|=(1<<4)|(1<<0);
+			case 3: PORTD|=(1<<4)|(1<<3);
 					break;
 			case 4: PORTD|=(1<<4);
 					break;
-			case 5: PORTD|=(1<<4);
-					PORTC|=(1<<6);
-					break;
-			case 6: PORTC|=(1<<6);
-					break;
-			case 7: PORTC|=(1<<6);
-					PORTD|=(1<<1);
-					break;
-		}
-	}
-	else if(configuration==2)
-	{
-		PORTD&=~(1<<7);
-		PORTE&=~(1<<6);
-		PORTB&=~((1<<4)|(1<<5));
-		
-		switch(microstep)
-		{
-			case 0: PORTD|=(1<<7);
-					break;
-			case 1: PORTD|=(1<<7);
-					PORTE|=(1<<6);
-					break;
-			case 2: PORTE|=(1<<6);
-					break;
-			case 3: PORTE|=(1<<6);
-					PORTB|=(1<<4);
-					break;
-			case 4: PORTB|=(1<<4);
-					break;
-			case 5: PORTB|=(1<<4)|(1<<5);
+			case 5: PORTD|=(1<<5)|(1<<4);
 					
 					break;
-			case 6: PORTB|=(1<<5);
+			case 6: PORTD|=(1<<5);
 					break;
-			case 7: PORTB|=(1<<5);
-					PORTD|=(1<<7);
+			case 7: 
+					PORTD|=(1<<5)|(1<<2);
 					break;
 		}
 	}
-	else if(configuration==3)
+	else if(configuration==2)	//PD6, PD7, PB0, PB1
 	{
-		PORTB&=~((1<<6)|(1<<3)|(1<<2)|(1<<1));
+		PORTD&=~((1<<7)|(1<<6));
+		PORTB&=~((1<<1)|(1<<0));
 		
 		switch(microstep)
 		{
-			case 0: PORTB|=(1<<6);
+			case 0: PORTD|=(1<<6);
 					break;
-			case 1: PORTB|=(1<<6)|(1<<2);
+			case 1: PORTD|=(1<<7)|(1<<6);
+					
 					break;
-			case 2: PORTB|=(1<<2);
+			case 2: PORTD|=(1<<7);
 					break;
-			case 3: PORTB|=(1<<2)|(1<<3);
+			case 3: PORTD|=(1<<7);
+					PORTB|=(1<<0);
 					break;
-			case 4: PORTB|=(1<<3);
+			case 4: PORTB|=(1<<0);
 					break;
-			case 5: PORTB|=(1<<3)|(1<<1);
+			case 5: PORTB|=(1<<1)|(1<<0);
+					
 					break;
 			case 6: PORTB|=(1<<1);
 					break;
-			case 7: PORTB|=(1<<1)|(1<<6);
+			case 7: PORTB|=(1<<1);
+					PORTD|=(1<<6);
 					break;
 		}
 	}
-	else
+	else if(configuration==3)	//PB2, PB3, PB4, PB5
 	{
-		PORTF&=~((1<<7)|(1<<6)|(1<<5)|(1<<4));
+		PORTB&=~((1<<5)|(1<<4)|(1<<3)|(1<<2));
 		
 		switch(microstep)
 		{
-			case 0: PORTF|=(1<<7);
+			case 0: PORTB|=(1<<2);
 					break;
-			case 1: PORTF|=(1<<7)|(1<<6);
+			case 1: PORTB|=(1<<3)|(1<<2);
 					break;
-			case 2: PORTF|=(1<<6);
+			case 2: PORTB|=(1<<3);
 					break;
-			case 3: PORTF|=(1<<6)|(1<<5);
+			case 3: PORTB|=(1<<4)|(1<<3);
 					break;
-			case 4: PORTF|=(1<<5);
+			case 4: PORTB|=(1<<4);
 					break;
-			case 5: PORTF|=(1<<5)|(1<<4);
+			case 5: PORTB|=(1<<5)|(1<<4);
 					break;
-			case 6: PORTF|=(1<<4);
+			case 6: PORTB|=(1<<5);
 					break;
-			case 7: PORTF|=(1<<7)|(1<<4);
+			case 7: PORTB|=(1<<5)|(1<<2);
+					break;
+		}
+	}
+	else			 //PC0, PC1, PC2, PC3
+	{
+		PORTC&=~((1<<3)|(1<<2)|(1<<1)|(1<<0));
+		
+		switch(microstep)
+		{
+			case 0: PORTC|=(1<<0);
+					break;
+			case 1: PORTC|=(1<<1)|(1<<0);
+					break;
+			case 2: PORTC|=(1<<1);
+					break;
+			case 3: PORTC|=(1<<2)|(1<<1);
+					break;
+			case 4: PORTC|=(1<<2);
+					break;
+			case 5: PORTC|=(1<<3)|(1<<2);
+					break;
+			case 6: PORTC|=(1<<3);
+					break;
+			case 7: PORTC|=(1<<3)|(1<<0);
 					break;
 		}
 	}
@@ -263,19 +264,25 @@ void StepperMotor_28BYJ48::drive(unsigned char speed, bool direction)
 	}
 	if(speed>8) speed=8;
 	unsigned char time=1<<(speed-1);
+	
+	LOG("Motor");
+	LOG((int)(configuration));
+	LOG(" speed ");
+	LOG((int)speed);
+	LOG("\n");
 	switch(configuration)
 	{
-		case 1: OCR1AH=0;
-				OCR1AL=time;
+		case 1: TIMSK0|=1<<2;
+				OCR0B=time;
 				break;
-		case 2: OCR3AH=0;
-				OCR3AL=time;
+		case 2: TIMSK0|=1<<1;
+				OCR0A=time;
 				break;
-		case 3: OCR3BH=0;
-				OCR3BL=time;
+		case 3: TIMSK2|=1<<1;
+				OCR2A=time;
 				break;
-		case 4: OCR1BH=0;
-				OCR1BL=time;
+		case 4: TIMSK2|=1<<2;
+				OCR2B=time;
 				break;
 	}
 	steps=-1;
@@ -293,22 +300,22 @@ StepperMotor_28BYJ48* StepperMotor_28BYJ48::getMotor(int num)
 	
 }
 
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER0_COMPB_vect)
 {
 	StepperMotor_28BYJ48*  motor=StepperMotor_28BYJ48::getMotor(1);
 	if(motor!=NULL)motor->microStep();
 }	
-ISR(TIMER3_COMPA_vect)
+ISR(TIMER0_COMPA_vect)
 {
 	StepperMotor_28BYJ48*  motor=StepperMotor_28BYJ48::getMotor(2);
 	if(motor!=NULL)motor->microStep();
 }
-ISR(TIMER3_COMPB_vect)
+ISR(TIMER2_COMPA_vect)
 {
 	StepperMotor_28BYJ48*  motor=StepperMotor_28BYJ48::getMotor(3);
 	if(motor!=NULL)motor->microStep();
 }
-ISR(TIMER1_COMPB_vect)
+ISR(TIMER2_COMPB_vect)
 {
 	StepperMotor_28BYJ48*  motor=StepperMotor_28BYJ48::getMotor(4);
 	if(motor!=NULL)motor->microStep();

@@ -3,26 +3,26 @@
  * 
  * Using:
  * 28BYJ-48 stepper motor driving library, using motor driver based on ULN2003.
- * This library is compatible only with arduino pro micro board.
+ * This library is compatible with arduino pro mini, nano, and uno boards.
  * Driver wiring possibilities:
- * 	1: pins 2,3,4,5			timer1
- *  2: pins 6,7,8,9			timer3
- *  3: pins 10,16,14,15 	timer3
- *  4: pins 18,19,20,21		timer1
- * It uses Timer 1 and 3
- * 
+ * 	1: pins 2,3,4,5			timer0
+ *  2: pins 6,7,8,9			timer0
+ *  3: pins 10,11,12,13 	timer2
+ *  4: pins A0, A1, A2, A3		timer2
+ * It uses Timer 0 and 2
  * 
  * author: Attila Medgyesi
  * email: medgyesiatila1998@gmail.com
  * date: 
  */
- 
+//#define DEBUG
 #include <28BYJ48.h>
 
-StepperMotor_28BYJ48 motor1(1);//select pin configuration
-
+StepperMotor_28BYJ48 motor1(3);//select pin configuration
+StepperMotor_28BYJ48 motor2(4);//select pin configuration
 void setup()
 {
+	
 	Serial.begin(9600);
 	
 	Serial.println("Stepper motor example test code");
@@ -33,27 +33,35 @@ void setup()
 		Serial.println("Pin configuration already used");
 		while(1);
 	}
+ if(!motor2.init())    
+  {
+    Serial.println("Pin configuration already used");
+    while(1);
+  }
 	Serial.println("Init end");
-	
+	motor1.drive(5);
+  motor2.drive(5, DIRECTION_BACKWARD);
 	//motor1.changeDefaultDirection(DIRECTION_BACKWARD);
 	
 }
 
 void loop()
 {
-	for(int i=0; i<8;i++)
-	{
-		motor1.drive(i);
-		delay(4000);
-	}
-	motor1.stop();
-	for(int i=0; i<8;i++)
-	{
-		motor1.drive(i, DIRECTION_BACKWARD);
-		delay(4000);
-	}
+	
+		
+		
+	
+ 
+	/*motor1.stop();
+ 
+  
+
+		motor1.drive(7, DIRECTION_BACKWARD);
+		
+	
 	motor1.stop();
 	motor1.driveSteps(100, 4);
-	delay(10000);
+  Serial.println(TCNT2);*/
+	
 }
 	
